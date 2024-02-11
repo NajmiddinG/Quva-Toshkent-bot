@@ -7,12 +7,12 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 
+# bot = Bot(token=API_TOKEN, proxy='http://server:3128') # for pythonanywhere
 group_id = '-1001999379495'
 main_group = '-1001866888083'
 admins = {1157747787, 5294055251, 1456151744}
 API_TOKEN = '6726936671:AAGvsymQGNa6CjDrL1bnl6yhFxN9Q24rXlQ'
 bot = Bot(token=API_TOKEN)
-# bot = Bot(token=API_TOKEN, proxy='http://server:3128')
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
