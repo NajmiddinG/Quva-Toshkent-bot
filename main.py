@@ -265,11 +265,15 @@ async def forward_message_to_bot(message: types.Message):
     try: await bot.forward_message(chat_id=group_id, from_chat_id=message.chat.id, message_id=message.message_id)
     except Exception as e: print(e)
     try:
-        await bot.send_message(chat_id=message.from_user.id, text=f"""‼ Xurmatli mijoz sizning zakasingiz qabul qilindi. Lichkangizga ishonchli shoferlarimiz aloqaga chiqadi.
-Murojaat uchun Telefon ( 916580055 911290055 )
-@Quva_Toshkent_admin""")
+        await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖 Haydovchilar qabul qilindi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998916580055, +998911290055\n💬 Admin: @Quva_Toshkent_admin""")
     except:
         pass
+    try:
+        success_text = f"""✅ Xurmatli #{message.from_user.first_name} sizning zakasingiz \n🚖 Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998916580055, +998911290055\n💬 Admin: @Quva_Toshkent_admin"""
+        await bot.send_message(chat_id=main_group, text=success_text)
+    except:
+        success_text = f"""✅ Xurmatli #{message.from_user.id} sizning zakasingiz \n🚖 Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998916580055, +998911290055\n💬 Admin: @Quva_Toshkent_admin"""
+        await bot.send_message(chat_id=main_group, text=success_text)
     try: await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     except Exception as e: print(e)
 
@@ -279,9 +283,7 @@ async def forward_message_to_bot_not_delete(message: types.Message):
     try: await bot.forward_message(chat_id=group_id, from_chat_id=message.chat.id, message_id=message.message_id)
     except Exception as e: print(e)
     try:
-        await bot.send_message(chat_id=message.from_user.id, text=f"""‼ Xurmatli mijoz sizning zakasingiz qabul qilindi. Lichkangizga ishonchli shoferlarimiz aloqaga chiqadi.
-Murojaat uchun Telefon ( 916580055 911290055 )
-@Quva_Toshkent_admin""")
+        await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖 Haydovchilar qabul qilindi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998916580055, +998911290055\n💬 Admin: @Quva_Toshkent_admin""")
     except:
         pass
 
