@@ -263,11 +263,22 @@ async def forward_message_to_bot(message: types.Message):
     # try: await bot.send_message(chat_id='-1002128600395', text=f"{message.chat.title} guruhudan habar\n📲 Bog'lanish: @{message.from_user.username}")
     # except Exception as e: print(e)
     try: await bot.forward_message(chat_id=group_id, from_chat_id=message.chat.id, message_id=message.message_id)
-    except Exception as e: print(e)
+    except Exception as e:
+        print(123123, e)
+        try:
+            username = message.from_user.username
+            await bot.send_message(chat_id=group_id, text=f"🚖Zakazchidan xabar: @{username}\n"+message.text)
+        except Exception as e:
+            print(1231232, e)
+            try:
+                username = message.from_user.username
+                await bot.send_message(chat_id=group_id, text=f"🚖Zakazchidan xabar: @{username}\n")
+            except:
+                await bot.send_message(chat_id=group_id, text="🚖Zakazchidan xabar: ")
     try:
         await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖 Haydovchilar qabul qilindi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998916580055, +998911290055\n💬 Admin: @Quva_Toshkent_admin""")
-    except:
-        pass
+    except Exception as e:
+        print(e)
     try:
         success_text = f"""✅ Xurmatli #{message.from_user.first_name} sizning zakasingiz \n🚖 Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998916580055, +998911290055\n💬 Admin: @Quva_Toshkent_admin"""
         await bot.send_message(chat_id=main_group, text=success_text)
@@ -279,11 +290,14 @@ async def forward_message_to_bot(message: types.Message):
 
 async def forward_message_to_bot_not_delete(message: types.Message):
     try: await bot.forward_message(chat_id=group_id, from_chat_id=message.chat.id, message_id=message.message_id)
-    except Exception as e: print(e)
+    except Exception as e:
+        print(e)
+        
     try:
         await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖 Haydovchilar qabul qilindi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998916580055, +998911290055\n💬 Admin: @Quva_Toshkent_admin""")
-    except:
-        pass
+    except Exception as e:
+        print(e)
+
 
 @dp.message_handler(content_types=['text', 'animation', 'audio', 'document', 'photo', 'sticker', 'video','video_note', 'voice', 'contact', 'dice', 'poll', 'venue', 'location','new_chat_members', 'left_chat_member', 'new_chat_title', 'new_chat_photo','delete_chat_photo', 'group_chat_created', 'supergroup_chat_created','channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id','pinned_message', 'invoice', 'successful_payment', 'passport_data', 'game','voice_chat_started', 'voice_chat_ended', 'voice_chat_participants_invited','inline_query', 'chosen_inline_result', 'callback_query', 'shipping_query','pre_checkout_query', 'unknown'])
 async def handle_all_messages(message: types.Message, state: FSMContext):
