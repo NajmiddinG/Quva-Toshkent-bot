@@ -189,3 +189,4 @@ pythonstartup.py
 .pythonstartup.py
 .vimrc
 .virtualenvs/
+.vscode/

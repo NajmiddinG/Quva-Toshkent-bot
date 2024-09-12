@@ -13,7 +13,6 @@ from aiogram.utils import executor
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-import requests
 
 # Load the .env file
 load_dotenv()

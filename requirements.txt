@@ -13,4 +13,5 @@ multidict==6.1.0
 python-dotenv==1.0.1
 pytz==2024.2
 typing_extensions==4.12.2
+urllib3==2.2.2
 yarl==1.11.1
