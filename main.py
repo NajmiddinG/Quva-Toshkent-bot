@@ -1,3 +1,6 @@
+import os
+import sys
+import signal
 import logging
 from aiogram import Bot, Dispatcher, types, executor
 import sqlite3
@@ -9,23 +12,64 @@ from aiogram.types import ParseMode
 from aiogram.utils import executor
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+import requests
 
+# Load the .env file
+load_dotenv()
 
+# Retrieve environment variables
+admins = set(os.getenv('ADMINS').split(','))
+api_token = os.getenv('API_TOKEN')
+archive_group_id = os.getenv('ARCHIVE_GROUP_ID')
+client_group_id = os.getenv('CLIENT_GROUP_ID')
+driver_group_id = os.getenv('DRIVER_GROUP_ID')
+main_group_id = os.getenv('MAIN_GROUP_ID')
 
-# bot = Bot(token=API_TOKEN, proxy='http://server:3128') # for pythonanywhere
-admins = {1157747787, 5294055251, 1456151744}
-client_group = '-1001843864425'
-# real
-# driver_group_id = '-1001999379495'
-# main_group = '-1001866888083'
-# API_TOKEN = '6726936671:AAGvsymQGNa6CjDrL1bnl6yhFxN9Q24rXlQ'
-# for me
-driver_group_id = '-1001509656302'
-main_group = '-1001902499620'
-API_TOKEN = '7003670909:AAHW9sf_aO3hSAIjDfEfqJ61Nu8UBCmLgIs'
-bot = Bot(token=API_TOKEN)
+# PID file setup
+PID_FILE = '/tmp/aiogram_bot.pid'
+
+def cleanup_pid_file():
+    """Remove the PID file if it exists."""
+    if os.path.isfile(PID_FILE):
+        os.remove(PID_FILE)
+
+def handle_exit(signum, frame):
+    """Handle termination signals and clean up before exiting."""
+    print(f"Received signal {signum}. Exiting...")
+    cleanup_pid_file()
+    sys.exit(0)
+
+# Register signal handlers for clean termination
+signal.signal(signal.SIGINT, handle_exit)
+signal.signal(signal.SIGTERM, handle_exit)
+
+def check_and_create_pid_file():
+    """Check if the PID file exists and verify if the process is still running."""
+    if os.path.isfile(PID_FILE):
+        with open(PID_FILE, 'r') as f:
+            old_pid = f.read().strip()
+        
+        try:
+            os.kill(int(old_pid), 0)  # Sends signal 0 to check if the process is alive
+            print(f"Another instance is running with PID {old_pid}. Exiting.")
+            sys.exit()
+        except (OSError, ValueError):
+            print("Stale PID file found. Removing and starting a new instance.")
+            cleanup_pid_file()
+    
+    # Create the PID file
+    with open(PID_FILE, 'w') as f:
+        f.write(str(os.getpid()))
+
+# Check and create PID file
+check_and_create_pid_file()
+
+# Bot initialization
+bot = Bot(token=api_token)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
+
 
 class AddAdminState(StatesGroup):
     WaitingForUsername = State()
@@ -63,7 +107,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS orders (
              )''')
 conn.commit()
 
-async def check_and_create_message_text_field():
+def check_and_create_message_text_field():
     # Check if the 'message_text' column exists
     c.execute('''PRAGMA table_info(orders)''')
     columns = c.fetchall()
@@ -78,8 +122,9 @@ async def check_and_create_message_text_field():
         print("The 'message_text' column already exists in the 'orders' table.")
     return "Success"
 
+check_and_create_message_text_field()
 
-async def get_order(order_id):
+def get_order(order_id):
     try:
         c.execute('''SELECT * FROM orders WHERE order_id = ?''', (order_id,))
         order_info = c.fetchone()
@@ -89,7 +134,7 @@ async def get_order(order_id):
         print(e)
         return -1
 
-async def save_order(username='Noaniq', first_name='Noaniq', message_id='0', order_message_id='0', order_list='', message_text=''):
+def save_order(username='Noaniq', first_name='Noaniq', message_id='0', order_message_id='0', order_list='', message_text=''):
     if message_id == '0': return
     try:
         # Insert a new row into the orders table
@@ -104,7 +149,7 @@ async def save_order(username='Noaniq', first_name='Noaniq', message_id='0', ord
         print(e)
         return None
 
-async def delete_order(order_id):
+def delete_order(order_id):
     try:
         # Execute the DELETE statement to remove the item with the specified order_id
         c.execute('''DELETE FROM orders WHERE order_id = ?''', (order_id,))
@@ -116,7 +161,7 @@ async def delete_order(order_id):
         print(e)
         return False
 
-async def delete_old_orders():
+def delete_old_orders():
     try:
         five_days_ago = datetime.now() - timedelta(days=5)
         c.execute('''DELETE FROM orders WHERE created_at < ?''', (five_days_ago,))
@@ -127,7 +172,7 @@ async def delete_old_orders():
         print(e)
         return False
 
-async def get_users(role):
+def get_users(role):
     try:
         c.execute('''SELECT user_id, username, first_name FROM users where user_type = ?''', (role,))
         return set([row for row in c.fetchall()])
@@ -136,7 +181,7 @@ async def get_users(role):
         print(e)
         return set()
 
-async def get_users_id(role):
+def get_users_id(role):
     try:
         c.execute('''SELECT user_id FROM users where user_type = ?''', (role,))
         return set([row[0] for row in c.fetchall()])
@@ -145,7 +190,7 @@ async def get_users_id(role):
         print(e)
         return set()
 
-async def get_user_info_by_id(user_id):
+def get_user_info_by_id(user_id):
     try:
         c.execute('''SELECT * FROM users WHERE user_id = ?''', (user_id,))
         user_info = c.fetchone()
@@ -155,7 +200,7 @@ async def get_user_info_by_id(user_id):
         print(e)
         return None
 
-async def get_user_info_by_username(username):
+def get_user_info_by_username(username):
     try:
         c.execute('''SELECT * FROM users WHERE username = ?''', (username,))
         user_info = c.fetchone()
@@ -165,7 +210,7 @@ async def get_user_info_by_username(username):
         print(e)
         return None
 
-async def add_user(user_id, username, first_name):
+def add_user(user_id, username, first_name):
     username = '@' + username
     try:
         c.execute('''SELECT * FROM users WHERE user_id = ?''', (user_id,))
@@ -182,9 +227,10 @@ async def add_user(user_id, username, first_name):
         bot.send_message(chat_id=1157747787, text=e)
         print("Error3:", e)
 
-async def add_role_to_user(username, role):
+def add_role_to_user(username: str, role):
+    if not username.startswith('@'): username = "@" + username
     try:
-        c.execute("SELECT * FROM users WHERE username=? OR username = ?", (username, '@' + username))
+        c.execute("SELECT * FROM users WHERE username=? OR username = ?", (username, username[1:]))
         user = c.fetchone()
         if user:
             user_id = user[0]
@@ -194,16 +240,16 @@ async def add_role_to_user(username, role):
             if emojies.get(role): emojie = emojies[role]
             else: emojie = ''
             print(f"""Role '{role}' added to user '{username}'.""")
-            return f"""{username} muavvaffaqiyatli {emojie} {role} ga aylandi"""
+            return f"""{username} muavvaffaqiyatli {emojie} {role} ga aylandi""", True
         else:
             print(f"""User '{username}' not found in the database.""")
-            return f"""{username} botga start bermagan!"""
+            return f"""{username} botga start bermagan!""", False
     except Exception as e:
         bot.send_message(chat_id=1157747787, text=e)
         print(e)
-        return f"""Xatolik yuz berdi"""
+        return f"""Xatolik yuz berdi""", False
 
-async def delete_user(username):
+def delete_user(username):
     try:
         c.execute("DELETE FROM users WHERE username = ?", (username,))
         conn.commit()
@@ -224,23 +270,23 @@ keyboard.add(KeyboardButton('/start'))
 @dp.message_handler(commands=['start'])
 async def handle_start_command(message: types.Message):
     user = message.from_user
-    if user.id in await get_users_id('Admin'):
+    if user.id in get_users_id('Admin'):
         await message.reply(f"👋 Assalomu alekum @{user.username} 🤴 admin.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard)
     else:
         keyboard2 = ReplyKeyboardMarkup(resize_keyboard=True)
         keyboard2.add(KeyboardButton('/start'))
-        if user.id in await get_users_id('Haydovchi'):
+        if user.id in get_users_id('Haydovchi'):
             await message.reply(f"👋 Assalomu alekum @{user.username} 🚖 haydovchi.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
         else:
-            await add_user(user.id, user.username, user.first_name)
+            add_user(user.id, user.username, user.first_name)
             await message.reply(f"👋 Assalomu alekum @{user.username} 🙎‍.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
 
 # admin
 @dp.message_handler(commands=['adminlar'])
 async def handle_adminlar_command(message: types.Message):
     user = message.from_user
-    if user.id in await get_users_id('Admin'):
-        all_admins = await get_users('Admin')
+    if user.id in get_users_id('Admin'):
+        all_admins = get_users('Admin')
         text = f"""Barcha 🤴 adminlar ({len(all_admins)})"""
         for index, admin in enumerate(all_admins):
             text+=f"""\n{index+1} - {admin[2]}: {admin[1]}"""
@@ -248,7 +294,7 @@ async def handle_adminlar_command(message: types.Message):
     else:
         keyboard2 = ReplyKeyboardMarkup(resize_keyboard=True)
         keyboard2.add(KeyboardButton('/start'))
-        if user.id in await get_users_id('Haydovchi'):
+        if user.id in get_users_id('Haydovchi'):
             await message.reply(f"👋 Assalomu alekum @{user.username} 🚖 haydovchi.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
         else:
             await message.reply(f"👋 Assalomu alekum @{user.username} 🙎‍.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
@@ -256,13 +302,13 @@ async def handle_adminlar_command(message: types.Message):
 @dp.message_handler(commands=['admin_qoshish'])
 async def handle_admin_qoshish_command(message: types.Message):
     user = message.from_user
-    if user.id in await get_users_id('Admin'):
+    if user.id in get_users_id('Admin'):
         await message.reply(text="Yangi adminni username ni kiriting:")
         await AddAdminState.WaitingForUsername.set()
     else:
         keyboard2 = ReplyKeyboardMarkup(resize_keyboard=True)
         keyboard2.add(KeyboardButton('/start'))
-        if user.id in await get_users_id('Haydovchi'):
+        if user.id in get_users_id('Haydovchi'):
             await message.reply(f"👋 Assalomu alekum @{user.username} 🚖 haydovchi.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
         else:
             await message.reply(f"👋 Assalomu alekum @{user.username} 🙎‍.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
@@ -270,19 +316,28 @@ async def handle_admin_qoshish_command(message: types.Message):
 @dp.message_handler(state=AddAdminState.WaitingForUsername)
 async def handle_new_admin_username(message: types.Message, state: FSMContext):
     username = message.text
-    await message.reply(await add_role_to_user(username, 'Admin'))
+    new_role = "Admin"
+    new_user = get_user_info_by_username(username)
+    if not username.startswith("@"): username = "@" + username
+    res, status = add_role_to_user(username, new_role)
+    if status:
+        admin_user = get_user_info_by_id(message.from_user.id)
+        archive_message = role_change_template_for_archive(admin_user, new_user, new_user[3], new_role)
+        await send_to_archive_group(message=archive_message)
+
+    await message.reply(res)
     await state.finish()
 
 @dp.message_handler(commands=['admin_ochirish'])
 async def handle_admin_ochirish_command(message: types.Message):
     user = message.from_user
-    if user.id in await get_users_id('Admin'):
+    if user.id in get_users_id('Admin'):
         await message.reply(text="Adminlikdan olib tashlamoqchi bo'lgan username ni kiriting:")
         await RemoveAdminState.WaitingForUsername.set()
     else:
         keyboard2 = ReplyKeyboardMarkup(resize_keyboard=True)
         keyboard2.add(KeyboardButton('/start'))
-        if user.id in await get_users_id('Haydovchi'):
+        if user.id in get_users_id('Haydovchi'):
             await message.reply(f"👋 Assalomu alekum @{user.username} 🚖 haydovchi.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
         else:
             await message.reply(f"👋 Assalomu alekum @{user.username} 🙎‍.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
@@ -290,15 +345,24 @@ async def handle_admin_ochirish_command(message: types.Message):
 @dp.message_handler(state=RemoveAdminState.WaitingForUsername)
 async def handle_remove_admin_username(message: types.Message, state: FSMContext):
     username = message.text
-    await message.reply(await add_role_to_user(username, 'Foydalanuvchi'))
+    new_role = "Foydalanuvchi"
+    new_user = get_user_info_by_username(username)
+    if not username.startswith("@"): username = "@" + username
+    res, status = add_role_to_user(username, new_role)
+    if status:
+        admin_user = get_user_info_by_id(message.from_user.id)
+        archive_message = role_change_template_for_archive(admin_user, new_user, new_user[3], new_role)
+        await send_to_archive_group(message=archive_message)
+
+    await message.reply(res)
     await state.finish()
 
 # haydovchi
 @dp.message_handler(commands=['haydovchilar'])
 async def handle_haydovchilar_command(message: types.Message):
     user = message.from_user
-    if user.id in await get_users_id('Admin'):
-        all_drivers = await get_users('Haydovchi')
+    if user.id in get_users_id('Admin'):
+        all_drivers = get_users('Haydovchi')
         text = f"""Barcha 🚖 haydovchilar ({len(all_drivers)})"""
         for index, driver in enumerate(all_drivers):
             text+=f"""\n{index+1} - {driver[2]}: {driver[1]}"""
@@ -306,7 +370,7 @@ async def handle_haydovchilar_command(message: types.Message):
     else:
         keyboard2 = ReplyKeyboardMarkup(resize_keyboard=True)
         keyboard2.add(KeyboardButton('/start'))
-        if user.id in await get_users_id('Haydovchi'):
+        if user.id in get_users_id('Haydovchi'):
             await message.reply(f"👋 Assalomu alekum @{user.username} 🚖 haydovchi.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
         else:
             await message.reply(f"👋 Assalomu alekum @{user.username} 🙎‍.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
@@ -314,13 +378,13 @@ async def handle_haydovchilar_command(message: types.Message):
 @dp.message_handler(commands=['haydovchi_qoshish'])
 async def handle_haydovchi_qoshish_command(message: types.Message):
     user = message.from_user
-    if user.id in await get_users_id('Admin'):
+    if user.id in get_users_id('Admin'):
         await message.reply(text="Yangi haydovchini username ni kiriting:")
         await AddDriverState.WaitingForUsername.set()
     else:
         keyboard2 = ReplyKeyboardMarkup(resize_keyboard=True)
         keyboard2.add(KeyboardButton('/start'))
-        if user.id in await get_users_id('Haydovchi'):
+        if user.id in get_users_id('Haydovchi'):
             await message.reply(f"👋 Assalomu alekum @{user.username} 🚖 haydovchi.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
         else:
             await message.reply(f"👋 Assalomu alekum @{user.username} 🙎‍.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
@@ -328,19 +392,28 @@ async def handle_haydovchi_qoshish_command(message: types.Message):
 @dp.message_handler(state=AddDriverState.WaitingForUsername)
 async def handle_new_driver_username(message: types.Message, state: FSMContext):
     username = message.text
-    await message.reply(await add_role_to_user(username, 'Haydovchi'))
+    new_role = "Haydovchi"
+    new_user = get_user_info_by_username(username)
+    if not username.startswith("@"): username = "@" + username
+    res, status = add_role_to_user(username, new_role)
+    if status:
+        admin_user = get_user_info_by_id(message.from_user.id)
+        archive_message = role_change_template_for_archive(admin_user, new_user, new_user[3], new_role)
+        await send_to_archive_group(message=archive_message)
+
+    await message.reply(res)
     await state.finish()
 
 @dp.message_handler(commands=['haydovchi_ochirish'])
 async def handle_haydovchi_ochirish_command(message: types.Message):
     user = message.from_user
-    if user.id in await get_users_id('Admin'):
+    if user.id in get_users_id('Admin'):
         await message.reply(text="Haydovchilikdan olib tashlamoqchi bo'lgan username ni kiriting:")
         await RemoveDriverState.WaitingForUsername.set()
     else:
         keyboard2 = ReplyKeyboardMarkup(resize_keyboard=True)
         keyboard2.add(KeyboardButton('/start'))
-        if user.id in await get_users_id('Haydovchi'):
+        if user.id in get_users_id('Haydovchi'):
             await message.reply(f"👋 Assalomu alekum @{user.username} 🚖 haydovchi.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
         else:
             await message.reply(f"👋 Assalomu alekum @{user.username} 🙎‍.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
@@ -348,7 +421,16 @@ async def handle_haydovchi_ochirish_command(message: types.Message):
 @dp.message_handler(state=RemoveDriverState.WaitingForUsername)
 async def handle_remove_driver_username(message: types.Message, state: FSMContext):
     username = message.text
-    await message.reply(await add_role_to_user(username, 'Foydalanuvchi'))
+    new_role = "Foydalanuvchi"
+    new_user = get_user_info_by_username(username)
+    if not username.startswith("@"): username = "@" + username
+    res, status = add_role_to_user(username, new_role)
+    if status:
+        admin_user = get_user_info_by_id(message.from_user.id)
+        archive_message = role_change_template_for_archive(admin_user, new_user, new_user[3], new_role)
+        await send_to_archive_group(message=archive_message)
+
+    await message.reply(res)
     await state.finish()
 
 async def modify_order_message_id(order_id, new_order_message_id):
@@ -376,7 +458,7 @@ async def update_order(order_id, order_list):
         return False
 
 async def drivers_notice(order_id):
-    order = await get_order(order_id=order_id)
+    order = get_order(order_id=order_id)
     text = f"💸 Klientning xabari:<i>{order[-1]}</i>\n🚖Navbatlar:\n1 - joy. bo'sh'\n@QuvaToshkent_bot'"
     button_label = "🙋‍♂ Navbatga yozilish!"
     button_label2 = "➡️ Qolganlarga o'tkazish!"
@@ -398,7 +480,7 @@ async def forward_message_to_bot(message: types.Message):
     try: username = '@'+message.from_user.username
     except: username = 'Noaniq'
     try:
-        resp = await bot.forward_message(chat_id=client_group, from_chat_id=message.chat.id, message_id=message.message_id)
+        resp = await bot.forward_message(chat_id=client_group_id, from_chat_id=message.chat.id, message_id=message.message_id)
         try: message_id = resp.message_id
         except: message_id = 'Noaniq'
         message_text = ''
@@ -410,7 +492,7 @@ async def forward_message_to_bot(message: types.Message):
                 if d<3:
                     message_text += ' ' + i
         except: pass
-        order_id = await save_order(username=username, first_name=first_name, message_id=message_id, order_message_id='0', order_list='', message_text=message_text)
+        order_id = save_order(username=username, first_name=first_name, message_id=message_id, order_message_id='0', order_list='', message_text=message_text)
         await drivers_notice(order_id)
         
     except Exception as e:
@@ -432,22 +514,21 @@ async def forward_message_to_bot(message: types.Message):
         bot.send_message(chat_id=1157747787, text=e)
         # print(e)
     
-    try: await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖 Haydovchilar qabul qilindi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998916580055\n💬 Admin: @SHERZOD_QUVA""")
+    try: await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖 Haydovchilar qabul qilindi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV""")
     except Exception as e:
         bot.send_message(chat_id=1157747787, text=e)
         # print(e)
     try:
-        success_text = f"""✅ Xurmatli #{message.from_user.first_name} sizning zakasingiz \n🚖 Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998916580055\n💬 Admin: @SHERZOD_QUVA"""
-        await bot.send_message(chat_id=main_group, text=success_text)
+        success_text = f"""✅ Xurmatli #{message.from_user.first_name} sizning zakasingiz \n🚖 Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV"""
+        await bot.send_message(chat_id=main_group_id, text=success_text)
     except:
-        success_text = f"""✅ Xurmatli #{message.from_user.id} sizning zakasingiz \n🚖 Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998916580055\n💬 Admin: @SHERZOD_QUVA"""
-        await bot.send_message(chat_id=main_group, text=success_text)
-
+        success_text = f"""✅ Xurmatli #{message.from_user.id} sizning zakasingiz \n🚖 Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV"""
+        await bot.send_message(chat_id=main_group_id, text=success_text)
 
 async def give_client(id, order):
     text = f"🙋‍ Mijozning ma'lumotlari: \nIsmi: {order[2]}\nUsername: {order[1]}"
     await bot.send_message(chat_id=id, text=text, protect_content=True)
-    await bot.forward_message(chat_id=id, from_chat_id=client_group, message_id=order[3], protect_content=True)
+    await bot.forward_message(chat_id=id, from_chat_id=client_group_id, message_id=order[3], protect_content=True)
     text = "Buyurtma holatini belgilang:"
     acc = "✅ Qabul qilindi!"
     dec = "🚫 Keyingi odamga o'tkazish!"
@@ -458,19 +539,24 @@ async def give_client(id, order):
         [InlineKeyboardButton(text=dec, callback_data=f'dec_order__{order[0]}')]
     ])
     await bot.send_message(chat_id=id, text=text, reply_markup=keyboard, protect_content=True)
-
+    archive_message = order_message_template_for_archive(id, order, order_info['gived'])
+    await send_to_archive_group(message=archive_message)
 
 @dp.callback_query_handler(lambda query: query.data.startswith('acc_order__'))
 async def handle_accept_query(callback_query: types.CallbackQuery):
     order_id = int(callback_query.data.split('__')[1])
-    order = await get_order(order_id)
+    order = get_order(order_id)
     await bot.delete_message(chat_id=driver_group_id, message_id=order[4])
-    await delete_order(order_id=order_id)
+    delete_order(order_id=order_id)
     await callback_query.answer('✅ Qabul qilindi!')
-    try: await bot.delete_message(chat_id=client_group, message_id=order[3])
-    except Exception as e:
-        bot.send_message(chat_id=1157747787, text=e)
-        # print(e)
+
+    archive_message = order_message_template_for_archive(callback_query.from_user.id, order, order_info['accepted'])
+    await send_to_archive_group(message=archive_message)
+    
+    # try: await bot.delete_message(chat_id=client_group_id, message_id=order[3])
+    # except Exception as e:
+    #     bot.send_message(chat_id=1157747787, text=e)
+    #     # print(e)
     
     for i in range(3):
         try:
@@ -481,11 +567,13 @@ async def handle_accept_query(callback_query: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda query: query.data.startswith('dec_order__'))
 async def handle_decline_query(callback_query: types.CallbackQuery):
-    await delete_old_orders()
+    delete_old_orders()
     # Extract the order ID from the callback data
     order_id = int(callback_query.data.split('__')[1])
-    order = await get_order(order_id)
+    order = get_order(order_id)
     lists = order[5].split(',')
+    archive_message = order_message_template_for_archive(callback_query.from_user.id, order, order_info['decline'])
+    await send_to_archive_group(message=archive_message)
     try:
         new_order_list = ','.join(l for l in lists[1:])
     except: new_order_list = ''
@@ -493,8 +581,8 @@ async def handle_decline_query(callback_query: types.CallbackQuery):
     await update_queue(order_id=order_id)
     try:
         if len(lists)>1:
-            id = int(await get_user_info_by_username(lists[1])[0])
-            order = await get_order(order_id=order_id)
+            id = int(get_user_info_by_username(lists[1])[0])
+            order = get_order(order_id=order_id)
             await give_client(id=id, order=order)
             await callback_query.answer("🚫 Keyingi odamga o'tkazildi!")
         else:
@@ -516,7 +604,7 @@ async def forward_message_to_bot_not_delete(message: types.Message):
     try: username = '@'+message.from_user.username
     except: username = 'Noaniq'
     try:
-        resp = await bot.forward_message(chat_id=client_group, from_chat_id=message.chat.id, message_id=message.message_id)
+        resp = await bot.forward_message(chat_id=client_group_id, from_chat_id=message.chat.id, message_id=message.message_id)
         try: message_id = resp.message_id
         except: message_id = 'Noaniq'
         message_text = ''
@@ -528,7 +616,7 @@ async def forward_message_to_bot_not_delete(message: types.Message):
                 if d<3:
                     message_text += ' ' + i
         except: pass
-        order_id = await save_order(username=username, first_name=first_name, message_id=message_id, order_message_id='0', order_list='', message_text=message_text)
+        order_id = save_order(username=username, first_name=first_name, message_id=message_id, order_message_id='0', order_list='', message_text=message_text)
         await drivers_notice(order_id)
         
     except Exception as e:
@@ -547,13 +635,13 @@ async def forward_message_to_bot_not_delete(message: types.Message):
     
         
     try:
-        await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖 Haydovchilar qabul qilindi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998916580055\n💬 Admin: @SHERZOD_QUVA""")
+        await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖 Haydovchilar qabul qilindi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV""")
     except Exception as e:
         bot.send_message(chat_id=1157747787, text=e)
         # print(3, e)
 
 async def update_queue(order_id):
-    order = await get_order(order_id)
+    order = get_order(order_id)
     try:
         text = f"💸 Klientning xabari:<i>{order[-1]}</i>\n🚖Navbatlar:"
         i = 0
@@ -578,7 +666,6 @@ async def update_queue(order_id):
             [InlineKeyboardButton(text=button_label2, callback_data=f'check_turn__{order_id}')]
         ])
         await bot.edit_message_text(chat_id=driver_group_id, message_id=order[4], text=text, parse_mode=ParseMode.HTML, reply_markup=keyboard)
-        await check_and_create_message_text_field()
         return True
     except Exception as e:
         bot.send_message(chat_id=1157747787, text=e)
@@ -588,30 +675,42 @@ async def update_queue(order_id):
 async def get_message_from_group(chat_id: int, message_id: int):
     try:
         # Retrieve the message from the group
-        message = await bot.forward_message(chat_id=chat_id, from_chat_id=client_group, message_id=message_id)
+        message = await bot.forward_message(chat_id=chat_id, from_chat_id=client_group_id, message_id=message_id)
         return message
     except Exception as e:
         bot.send_message(chat_id=1157747787, text=e)
         # print("Error2:", e)
         return None
-    
+
 @dp.message_handler(content_types=['text', 'animation', 'audio', 'document', 'photo', 'sticker', 'video','video_note', 'voice', 'contact', 'dice', 'poll', 'venue', 'location','new_chat_members', 'left_chat_member', 'new_chat_title', 'new_chat_photo','delete_chat_photo', 'group_chat_created', 'supergroup_chat_created','channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id','pinned_message', 'invoice', 'successful_payment', 'passport_data', 'game','voice_chat_started', 'voice_chat_ended', 'voice_chat_participants_invited','inline_query', 'chosen_inline_result', 'callback_query', 'shipping_query','pre_checkout_query', 'unknown'])
 async def handle_all_messages(message: types.Message, state: FSMContext):
+    non_user_message_types = ['new_chat_members', 'left_chat_member', 'new_chat_title', 'new_chat_photo',
+                              'delete_chat_photo', 'group_chat_created', 'supergroup_chat_created',
+                              'channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id',
+                              'pinned_message', 'invoice', 'successful_payment', 'passport_data', 'game',
+                              'voice_chat_started', 'voice_chat_ended', 'voice_chat_participants_invited']
+    
+    # Skip non-user messages
+    if message.content_type in non_user_message_types:
+        try: await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+        except Exception as e: bot.send_message(chat_id=1157747787, text=e)
+        return
+
     sender_id = message.from_user.id
-    # print(message)
-    if str(sender_id) != '1087968824': # 1087968824 is group message.from.id 
-        if (sender_id not in await get_users_id('Admin') and sender_id not in await get_users_id('Haydovchi')):
-            if str(message.chat.id) == main_group: # client message sended to group
+
+    if str(sender_id) != '1087968824':  # 1087968824 is group message.from.id
+        if (sender_id not in get_users_id('Admin') and sender_id not in get_users_id('Haydovchi')):
+            if str(message.chat.id) == main_group_id:  # client message sent to group
                 await forward_message_to_bot(message)
-            if str(message.from_user.id) == str(message.chat.id): # client message sended to bot
+            if str(message.from_user.id) == str(message.chat.id):  # client message sent to bot
                 await forward_message_to_bot_not_delete(message)
-        else: # user is admin or driver
-            pass                
+        else:  # user is admin or driver
+            pass               
 
 @dp.callback_query_handler(lambda query: query.data.startswith('check_turn__'))
 async def handle_check_turn_callback(callback_query: types.CallbackQuery):
     sender_id = callback_query.from_user.id
-    if sender_id not in await get_users_id('Admin'):
+    if sender_id not in get_users_id('Admin'):
         await callback_query.answer("Bu tugma faqat adminlar uchun!")
         return
     if callback_query.message.chat.id != int(driver_group_id):
@@ -619,7 +718,7 @@ async def handle_check_turn_callback(callback_query: types.CallbackQuery):
         return
     # print(1, callback_query)
     order_id = int(callback_query.data.split('__')[1])
-    order = await get_order(order_id=order_id)
+    order = get_order(order_id=order_id)
     if order == -1:
         await callback_query.answer("Bu klient allaqachon haydovchi topgan!")
         return
@@ -628,9 +727,9 @@ async def handle_check_turn_callback(callback_query: types.CallbackQuery):
         order_list = order[5]
         for index, username in enumerate(order_list.split(',')):
             if index == 0: continue
-            user_id = await get_user_info_by_username(username)[0]
+            user_id = get_user_info_by_username(username)[0]
 
-            order = await get_order(order_id=order_id)
+            order = get_order(order_id=order_id)
             await give_client(user_id, order)
             await callback_query.answer("Sizga botda lichka tashlandi: @QuvaToshkent_bot !")
     except Exception as e:
@@ -640,11 +739,10 @@ async def handle_check_turn_callback(callback_query: types.CallbackQuery):
         return
     await callback_query.answer("Username sizda bo'lishi talab qilinadi!")
 
-
 @dp.callback_query_handler(lambda query: query.data.startswith('add_turn__'))
 async def handle_add_turn_callback(callback_query: types.CallbackQuery):
     sender_id = callback_query.from_user.id
-    if (sender_id not in await get_users_id('Admin') and sender_id not in await get_users_id('Haydovchi')):
+    if (sender_id not in get_users_id('Admin') and sender_id not in get_users_id('Haydovchi')):
         await callback_query.answer("Siz haydovchi yoki admin bo'lishingiz kerak!")
         return
     if callback_query.message.chat.id != int(driver_group_id):
@@ -652,7 +750,7 @@ async def handle_add_turn_callback(callback_query: types.CallbackQuery):
         return
     # print(1, callback_query)
     order_id = int(callback_query.data.split('__')[1])
-    order = await get_order(order_id=order_id)
+    order = get_order(order_id=order_id)
     if order == -1:
         await callback_query.answer("Bu klient allaqachon haydovchi topgan!")
         return
@@ -673,7 +771,7 @@ async def handle_add_turn_callback(callback_query: types.CallbackQuery):
                 c = order_list.count(',')
                 await callback_query.answer(f"Siz navbatga {c+1}-bo'lib qo'shildingiz")
                 if c == 0:
-                    order = await get_order(order_id=order_id)
+                    order = get_order(order_id=order_id)
                     await give_client(callback_query.from_user.id, order)
                     await callback_query.answer("Sizga botda lichka tashlandi: @QuvaToshkent_bot !")
                 await update_queue(order_id)
@@ -684,6 +782,44 @@ async def handle_add_turn_callback(callback_query: types.CallbackQuery):
         return
     await callback_query.answer("Username sizda bo'lishi talab qilinadi!")
 
+def order_message_template_for_archive(driver_id, order, info):
+    # Fetch driver information
+    haydovchi = get_user_info_by_id(driver_id)
+
+    # Prepare the message content with improved formatting
+    message = (
+        f"📝 <b>Zakaz:</b> <a href='https://t.me/c/{client_group_id[4:]}/{order[3]}'>{order[4]}</a>\n"
+        f"👨‍✈️ <b>Haydovchi:</b> {haydovchi[1]} ({haydovchi[2]})\n"
+        f"👤 <b>Mijoz:</b> {order[1]} ({order[2]})\n"
+        f"📌 <b>Maqsad:</b> <i>{info}</i>\n"
+        f"📅 <b>Sana:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
+
+    return message
+
+def role_change_template_for_archive(admin_user, new_user, old_role, new_role):
+    message = (
+        f"🔄 <b>Rol o'zgarishi haqida xabar</b>\n"
+        f"👤 <b>Admin:</b> {admin_user[1]} ({admin_user[2]})\n"
+        f"👥 <b>Foydalanuvchi:</b> {new_user[1]} ({new_user[2]})\n"
+        f"🛠️ <b>Eski rol:</b> {old_role}\n"
+        f"🎉 <b>Yangi rol:</b> {new_role}\n"
+        f"📅 <b>O'zgarish sanasi:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+    )
+
+    return message
+
+async def send_to_archive_group(message: str):
+    try:
+        await bot.send_message(chat_id=archive_group_id, text=message, parse_mode=ParseMode.HTML)
+    except Exception as e:
+        print(f"Failed to send message to archive group: {e}")
+
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    executor.start_polling(dp, skip_updates=True)
+    try:
+        # Start polling
+        logging.basicConfig(level=logging.INFO)
+        executor.start_polling(dp, skip_updates=True)
+    finally:
+        # Ensure the PID file is removed when the script ends
+        cleanup_pid_file()
