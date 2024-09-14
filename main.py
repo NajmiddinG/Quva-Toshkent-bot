@@ -490,8 +490,11 @@ async def forward_message_to_bot(message: types.Message):
     except: first_name = 'Noaniq'
     try: username = '@'+message.from_user.username
     except: username = 'Noaniq'
+    resp = await bot.forward_message(chat_id=client_group_id, from_chat_id=message.chat.id, message_id=message.message_id)
+    try: await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+    except Exception as e:
+        await bot.send_message(chat_id=1157747787, text="16: " + e)
     try:
-        resp = await bot.forward_message(chat_id=client_group_id, from_chat_id=message.chat.id, message_id=message.message_id)
         try: message_id = resp.message_id
         except: message_id = 'Noaniq'
         message_text = ''
@@ -520,9 +523,7 @@ async def forward_message_to_bot(message: types.Message):
                 await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n")
             except: await bot.send_message(chat_id=driver_group_id, text="🚖Zakazchidan xabar: ")
     
-    try: await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-    except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="16: " + e)
+    
         # print(e)
     
     try: await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV""")
@@ -677,8 +678,7 @@ async def forward_message_to_bot_not_delete(message: types.Message):
                 username = message.from_user.username
                 await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n")
             except: await bot.send_message(chat_id=driver_group_id, text="🚖Zakazchidan xabar: ")
-    
-        
+
     try:
         await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖 Haydovchilar qabul qilindi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV""")
     except Exception as e:
@@ -735,7 +735,6 @@ async def handle_all_messages(message: types.Message, state: FSMContext):
                               'pinned_message', 'invoice', 'successful_payment', 'passport_data', 'game',
                               'voice_chat_started', 'voice_chat_ended', 'voice_chat_participants_invited']
     
-    # Skip non-user messages
     if message.content_type in non_user_message_types:
         try: await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
         except Exception as e: await bot.send_message(chat_id=1157747787, text="25: " + e)
@@ -750,7 +749,7 @@ async def handle_all_messages(message: types.Message, state: FSMContext):
             if str(message.from_user.id) == str(message.chat.id):  # client message sent to bot
                 await forward_message_to_bot_not_delete(message)
         else:  # user is admin or driver
-            pass               
+            pass
 
 @dp.callback_query_handler(lambda query: query.data.startswith('check_turn__'))
 async def handle_check_turn_callback(callback_query: types.CallbackQuery):
@@ -833,7 +832,7 @@ def order_message_template_for_archive(driver_id, order, info):
 
     # Prepare the message content with improved formatting
     message = (
-        f"📝 <b>Zakaz:</b> <a href='https://t.me/c/{client_group_id[4:]}/{order[3]}'>{order[4]}</a>\n"
+        f"📝 <b>Zakaz:</b> <a href='https://t.me/c/{client_group_id[4:]}/{order[3]}'>{order[3]}</a>\n"
         f"👨‍✈️ <b>Haydovchi:</b> {haydovchi[1]} ({haydovchi[2]})\n"
         f"👤 <b>Mijoz:</b> {order[1]} ({order[2]})\n"
         f"📌 <b>Maqsad:</b> <i>{info}</i>\n"
