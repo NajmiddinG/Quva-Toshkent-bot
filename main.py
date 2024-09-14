@@ -460,15 +460,16 @@ async def update_order(order_id, order_list):
         print(e)
         return False
 
-async def drivers_notice(order_id):
+async def drivers_notice(order_id, client_message = None):
     order = get_order(order_id=order_id)
     for admin_id in admins:
         admin_id = int(admin_id)
         if int(admin_id) != 1157747787:
             await give_client_for_admin(admin_id, order)
     
-    await asyncio.sleep(10)
+    await asyncio.sleep(15)
     if get_order(order_id) is None: return
+    if client_message: await send_client_success_message(client_message)
     text = f"💸 Klientning xabari:<i>{order[-1]}</i>\n🚖Navbatlar:\n1 - joy. bo'sh'\n@QuvaToshkent_bot'"
     button_label = "🙋‍♂ Navbatga yozilish!"
     button_label2 = "➡️ Qolganlarga o'tkazish!"
@@ -503,7 +504,7 @@ async def forward_message_to_bot(message: types.Message):
                     message_text += ' ' + i
         except: pass
         order_id = save_order(username=username, first_name=first_name, message_id=message_id, order_message_id='0', order_list='', message_text=message_text)
-        await drivers_notice(order_id)
+        await drivers_notice(order_id, client_message=message)
         
     except Exception as e:
         await bot.send_message(chat_id=1157747787, text="14: " + e)
@@ -524,10 +525,12 @@ async def forward_message_to_bot(message: types.Message):
         await bot.send_message(chat_id=1157747787, text="16: " + e)
         # print(e)
     
-    try: await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖 Haydovchilar qabul qilindi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV""")
+    try: await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV""")
     except Exception as e:
         await bot.send_message(chat_id=1157747787, text="17: " + e)
         # print(e)
+
+async def send_client_success_message(message: types.Message):
     try:
         success_text = f"""✅ Xurmatli #{message.from_user.first_name} sizning zakasingiz \n🚖 Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV"""
         await bot.send_message(chat_id=main_group_id, text=success_text)
