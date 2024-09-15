@@ -534,10 +534,10 @@ async def forward_message_to_bot(message: types.Message):
 async def send_client_success_message(message: types.Message):
     try:
         success_text = f"""✅ Xurmatli #{message.from_user.first_name} sizning zakasingiz \n🚖 Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV"""
-        await bot.send_message(chat_id=main_group_id, text=success_text)
+        await bot.send_message(chat_id=message.chat.id, text=success_text)
     except:
         success_text = f"""✅ Xurmatli #{message.from_user.id} sizning zakasingiz \n🚖 Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV"""
-        await bot.send_message(chat_id=main_group_id, text=success_text)
+        await bot.send_message(chat_id=message.chat.id, text=success_text)
 
 async def give_client(id, order):
     text = f"🙋‍ Mijozning ma'lumotlari: \nIsmi: {order[2]}\nUsername: {order[1]}"
@@ -574,7 +574,13 @@ async def give_client_for_admin(id, order):
 async def handle_accept_query_for_admins(callback_query: types.CallbackQuery):
     order_id = int(callback_query.data.split('__')[1])
     order = get_order(order_id)
-    if order is None: return
+    if order is None:
+        await callback_query.answer('Bunday zakaz mavjud emas!')
+        return
+    diff = datetime.now() - datetime.strptime(order[6], "%Y-%m-%d %H:%M:%S.%f")
+    if diff.total_seconds() > 15:
+        await callback_query.answer('Siz kech qoldingiz!')
+        return
     delete_order(order_id=order_id)
     await callback_query.answer('✅ Qabul qilindi!')
 
@@ -734,7 +740,7 @@ async def handle_all_messages(message: types.Message, state: FSMContext):
                               'channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id',
                               'pinned_message', 'invoice', 'successful_payment', 'passport_data', 'game',
                               'voice_chat_started', 'voice_chat_ended', 'voice_chat_participants_invited']
-    
+
     if message.content_type in non_user_message_types:
         try: await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
         except Exception as e: await bot.send_message(chat_id=1157747787, text="25: " + e)
@@ -744,9 +750,9 @@ async def handle_all_messages(message: types.Message, state: FSMContext):
 
     if str(sender_id) != '1087968824':  # 1087968824 is group message.from.id
         if (sender_id not in get_users_id('Admin') and sender_id not in get_users_id('Haydovchi')):
-            if str(message.chat.id) == main_group_id:  # client message sent to group
+            if str(message.chat.id) in [main_group_id, str(-1001403293146)]:  # client message sent to group
                 await forward_message_to_bot(message)
-            if str(message.from_user.id) == str(message.chat.id):  # client message sent to bot
+            elif str(message.from_user.id) == str(message.chat.id):
                 await forward_message_to_bot_not_delete(message)
         else:  # user is admin or driver
             pass
