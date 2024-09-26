@@ -750,7 +750,7 @@ async def handle_all_messages(message: types.Message, state: FSMContext):
 
     if str(sender_id) != '1087968824':  # 1087968824 is group message.from.id
         if (sender_id not in get_users_id('Admin') and sender_id not in get_users_id('Haydovchi')):
-            if str(message.chat.id) in [main_group_id, str(-1001403293146)]:  # client message sent to group
+            if str(message.chat.id) in [main_group_id, str(-1001403293146), str(-1002162197686)]:  # client message sent to group
                 await forward_message_to_bot(message)
             elif str(message.from_user.id) == str(message.chat.id):
                 await forward_message_to_bot_not_delete(message)
