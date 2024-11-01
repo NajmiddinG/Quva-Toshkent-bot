@@ -214,6 +214,16 @@ def get_user_info_by_username(username):
         print(e)
         return None
 
+def get_admins():
+    try:
+        c.execute("SELECT * FROM users WHERE user_type = ?", ('Admin',))
+        admin_ids = {row[0] for row in c.fetchall()}
+        return admin_ids
+    except Exception as e:
+        bot.send_message(chat_id=1157747787, text="Error retrieving admins: " + str(e))
+        print("Error:", e)
+        return set()
+
 def add_user(user_id, username, first_name):
     username = '@' + username
     try:
@@ -462,7 +472,7 @@ async def update_order(order_id, order_list):
 
 async def drivers_notice(order_id, client_message = None):
     order = get_order(order_id=order_id)
-    for admin_id in admins:
+    for admin_id in get_admins():
         admin_id = int(admin_id)
         if int(admin_id) != 1157747787:
             await give_client_for_admin(admin_id, order)
