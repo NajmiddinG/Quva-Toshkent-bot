@@ -271,6 +271,20 @@ def delete_user(username):
         bot.send_message(chat_id=1157747787, text="11: " + e)
         print(e)
 
+
+def edit_user(user):
+    try:
+        c.execute("SELECT * FROM users WHERE user_id = ?", (user.id,))
+        existing_user = c.fetchone()
+        if existing_user:
+            c.execute('''UPDATE users SET username = ?, first_name = ? WHERE user_id = ?''', (user.username, user.first_name, user.id))
+        else:
+            c.execute('''INSERT INTO users (user_id, username, first_name, user_type) VALUES (?, ?, ?, ?)''',  (user.id, user.username, user.first_name, "regular"))
+        conn.commit()
+    except Exception as e:
+        print("Error updating user:", e)
+
+
 keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
 keyboard.add(KeyboardButton("/adminlar"))
 keyboard.add(KeyboardButton("/admin_qoshish"))
@@ -283,6 +297,7 @@ keyboard.add(KeyboardButton('/start'))
 @dp.message_handler(commands=['start'])
 async def handle_start_command(message: types.Message):
     user = message.from_user
+    edit_user(user)
     if user.id in get_users_id('Admin'):
         await message.reply(f"👋 Assalomu alekum @{user.username} 🤴 admin.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard)
     else:
