@@ -514,7 +514,7 @@ async def forward_message_to_bot(message: types.Message):
     try: first_name = message.from_user.first_name
     except: first_name = 'Noaniq'
     try: username = '@'+message.from_user.username
-    except: username = 'Noaniq'
+    except: username = f'<a href="tg://user?id={message.from_user.id}">Profil ko\'rish</a>'
     resp = await bot.forward_message(chat_id=client_group_id, from_chat_id=message.chat.id, message_id=message.message_id)
     try: await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     except Exception as e:
@@ -538,14 +538,12 @@ async def forward_message_to_bot(message: types.Message):
         await bot.send_message(chat_id=1157747787, text="14: " + e)
         # print(1, e)
         try:
-            username = message.from_user.username
-            await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n"+message.text)
+            await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n"+message.text, parse_mode=ParseMode.HTML)
         except Exception as e:
             await bot.send_message(chat_id=1157747787, text="15: " + e)
             # print(2, e)
             try:
-                username = message.from_user.username
-                await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n")
+                await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n", parse_mode=ParseMode.HTML)
             except: await bot.send_message(chat_id=driver_group_id, text="🚖Zakazchidan xabar: ")
     
     
@@ -559,14 +557,14 @@ async def forward_message_to_bot(message: types.Message):
 async def send_client_success_message(message: types.Message):
     try:
         success_text = f"""✅ Xurmatli #{message.from_user.first_name} sizning zakasingiz \n🚖 Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV"""
-        await bot.send_message(chat_id=message.chat.id, text=success_text)
+        await bot.send_message(chat_id=message.chat.id, text=success_text, parse_mode=ParseMode.HTML)
     except:
         success_text = f"""✅ Xurmatli #{message.from_user.id} sizning zakasingiz \n🚖 Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV"""
-        await bot.send_message(chat_id=message.chat.id, text=success_text)
+        await bot.send_message(chat_id=message.chat.id, text=success_text, parse_mode=ParseMode.HTML)
 
 async def give_client(id, order):
     text = f"🙋‍ Mijozning ma'lumotlari: \nIsmi: {order[2]}\nUsername: {order[1]}"
-    await bot.send_message(chat_id=id, text=text, protect_content=True)
+    await bot.send_message(chat_id=id, text=text, protect_content=True, parse_mode=ParseMode.HTML)
     await bot.forward_message(chat_id=id, from_chat_id=client_group_id, message_id=order[3], protect_content=True)
     text = "Buyurtma holatini belgilang:"
     acc = "✅ Qabul qilindi!"
@@ -583,7 +581,7 @@ async def give_client(id, order):
 
 async def give_client_for_admin(id, order):
     text = f"🙋‍ Mijozning ma'lumotlari: \nIsmi: {order[2]}\nUsername: {order[1]}"
-    await bot.send_message(chat_id=id, text=text, protect_content=True)
+    await bot.send_message(chat_id=id, text=text, protect_content=True, parse_mode=ParseMode.HTML)
     await bot.forward_message(chat_id=id, from_chat_id=client_group_id, message_id=order[3], protect_content=True)
     text = "Buyurtma holatini belgilang:"
     acc = "✅ Qabul qilindi!"
@@ -679,7 +677,7 @@ async def forward_message_to_bot_not_delete(message: types.Message):
     try: first_name = message.from_user.first_name
     except: first_name = 'Noaniq'
     try: username = '@'+message.from_user.username
-    except: username = 'Noaniq'
+    except: username = f'<a href="tg://user?id={message.from_user.id}">Profil ko\'rish</a>'
     try:
         resp = await bot.forward_message(chat_id=client_group_id, from_chat_id=message.chat.id, message_id=message.message_id)
         try: message_id = resp.message_id
@@ -700,15 +698,13 @@ async def forward_message_to_bot_not_delete(message: types.Message):
         await bot.send_message(chat_id=1157747787, text="20: " + e)
         # print(3, e)
         try:
-            username = message.from_user.username
-            await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n"+message.text)
+            await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n"+message.text, parse_mode=ParseMode.HTML)
         except Exception as e:
-            await bot.send_message(chat_id=1157747787, text="21: " + e)
+            await bot.send_message(chat_id=1157747787, text="21: " + e, parse_mode=ParseMode.HTML)
             # print(4, e)
             try:
-                username = message.from_user.username
-                await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n")
-            except: await bot.send_message(chat_id=driver_group_id, text="🚖Zakazchidan xabar: ")
+                await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n", parse_mode=ParseMode.HTML)
+            except: await bot.send_message(chat_id=driver_group_id, text="🚖Zakazchidan xabar: ", parse_mode=ParseMode.HTML)
 
     try:
         await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖 Haydovchilar qabul qilindi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV""")
@@ -852,7 +848,7 @@ async def handle_add_turn_callback(callback_query: types.CallbackQuery):
                     await callback_query.answer("Sizga botda lichka tashlandi: @QuvaToshkent_bot !")
                 await update_queue(order_id)
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="27: " + e)
+        await bot.send_message(chat_id=1157747787, text="27: " + e, parse_mode=ParseMode.HTML)
         # print(e)
         await callback_query.answer("Xatolik kelib chiqdi!")
         return
