@@ -136,7 +136,7 @@ def get_order(order_id):
         order_info = c.fetchone()
         return order_info
     except Exception as e:
-        bot.send_message(chat_id=1157747787, text="1: " + e)
+        bot.send_message(chat_id=1157747787, text="1: " + str(e))
         return -1
 
 def save_order(username='Noaniq', first_name='Noaniq', message_id='0', order_message_id='0', order_list='', message_text=''):
@@ -150,7 +150,7 @@ def save_order(username='Noaniq', first_name='Noaniq', message_id='0', order_mes
         order_id = c.lastrowid
         return order_id
     except Exception as e:
-        bot.send_message(chat_id=1157747787, text="2: " + e)
+        bot.send_message(chat_id=1157747787, text="2: " + str(e))
         return None
 
 def delete_order(order_id):
@@ -161,7 +161,7 @@ def delete_order(order_id):
         conn.commit()
         return True
     except Exception as e:
-        bot.send_message(chat_id=1157747787, text="3: " + e)
+        bot.send_message(chat_id=1157747787, text="3: " + str(e))
         print(e)
         return False
 
@@ -172,7 +172,7 @@ def delete_old_orders():
         conn.commit()
         return True
     except Exception as e:
-        bot.send_message(chat_id=1157747787, text="4: " + e)
+        bot.send_message(chat_id=1157747787, text="4: " + str(e))
         print(e)
         return False
 
@@ -181,7 +181,7 @@ def get_users(role):
         c.execute('''SELECT user_id, username, first_name FROM users where user_type = ?''', (role,))
         return set([row for row in c.fetchall()])
     except Exception as e:
-        bot.send_message(chat_id=1157747787, text="5: " + e)
+        bot.send_message(chat_id=1157747787, text="5: " + str(e))
         print(e)
         return set()
 
@@ -190,7 +190,7 @@ def get_users_id(role):
         c.execute('''SELECT user_id FROM users where user_type = ?''', (role,))
         return set([row[0] for row in c.fetchall()])
     except Exception as e:
-        bot.send_message(chat_id=1157747787, text="6: " + e)
+        bot.send_message(chat_id=1157747787, text="6: " + str(e))
         print(e)
         return set()
 
@@ -200,7 +200,7 @@ def get_user_info_by_id(user_id):
         user_info = c.fetchone()
         return user_info  # Returns a tuple with user information (user_id, username, first_name, user_type) or None if user not found
     except Exception as e:
-        bot.send_message(chat_id=1157747787, text="7: " + e)
+        bot.send_message(chat_id=1157747787, text="7: " + str(e))
         print(e)
         return None
 
@@ -210,7 +210,7 @@ def get_user_info_by_username(username):
         user_info = c.fetchone()
         return user_info  # Returns a tuple with user information (user_id, username, first_name, user_type) or None if user not found
     except Exception as e:
-        bot.send_message(chat_id=1157747787, text="8: " + e)
+        bot.send_message(chat_id=1157747787, text="8: " + str(e))
         print(e)
         return None
 
@@ -238,7 +238,7 @@ def add_user(user_id, username, first_name):
             conn.commit()
             print("New user added successfully.")
     except Exception as e:
-        bot.send_message(chat_id=1157747787, text="9: " + e)
+        bot.send_message(chat_id=1157747787, text="9: " + str(e))
         print("Error3:", e)
 
 def add_role_to_user(username: str, role):
@@ -258,7 +258,7 @@ def add_role_to_user(username: str, role):
         else:
             return f"""{username} botga start bermagan!""", False
     except Exception as e:
-        bot.send_message(chat_id=1157747787, text="10: " + e)
+        bot.send_message(chat_id=1157747787, text="10: " + str(e))
         print(e)
         return f"""Xatolik yuz berdi""", False
 
@@ -268,7 +268,7 @@ def delete_user(username):
         conn.commit()
         print(f"User with username '{username}' deleted.")
     except Exception as e:
-        bot.send_message(chat_id=1157747787, text="11: " + e)
+        bot.send_message(chat_id=1157747787, text="11: " + str(e))
         print(e)
 
 
@@ -469,7 +469,7 @@ async def modify_order_message_id(order_id, new_order_message_id):
         conn.commit()
         return True
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="12: " + e)
+        await bot.send_message(chat_id=1157747787, text="12: " + str(e))
         print(e)
         return False
 
@@ -481,7 +481,7 @@ async def update_order(order_id, order_list):
         conn.commit()
         return True
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="13: " + e)
+        await bot.send_message(chat_id=1157747787, text="13: " + str(e))
         print(e)
         return False
 
@@ -517,7 +517,7 @@ async def forward_message_to_bot(message: types.Message):
     resp = await bot.forward_message(chat_id=client_group_id, from_chat_id=message.chat.id, message_id=message.message_id)
     try: await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="16: " + e)
+        await bot.send_message(chat_id=1157747787, text="16: " + str(e))
     try:
         try: message_id = resp.message_id
         except: message_id = 'Noaniq'
@@ -534,12 +534,12 @@ async def forward_message_to_bot(message: types.Message):
         await drivers_notice(order_id, client_message=message)
         
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="14: " + e)
+        await bot.send_message(chat_id=1157747787, text="14: " + str(e))
         # print(1, e)
         try:
             await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n"+message.text, parse_mode=ParseMode.HTML)
         except Exception as e:
-            await bot.send_message(chat_id=1157747787, text="15: " + e)
+            await bot.send_message(chat_id=1157747787, text="15: " + str(e))
             # print(2, e)
             try:
                 await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n", parse_mode=ParseMode.HTML)
@@ -550,7 +550,7 @@ async def forward_message_to_bot(message: types.Message):
     
     try: await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖Haydovchilar guruhiga tushdi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV""")
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="17: " + e)
+        await bot.send_message(chat_id=1157747787, text="17: " + str(e))
         # print(e)
 
 async def send_client_success_message(message: types.Message):
@@ -629,7 +629,7 @@ async def handle_accept_query(callback_query: types.CallbackQuery):
     
     # try: await bot.delete_message(chat_id=client_group_id, message_id=order[3])
     # except Exception as e:
-    #   await bot.send_message(chat_id=1157747787, text="18: " + e)
+    #   await bot.send_message(chat_id=1157747787, text="18: " + str(e))
     #     # print(e)
     
     for i in range(1):
@@ -662,7 +662,7 @@ async def handle_decline_query(callback_query: types.CallbackQuery):
         else:
             await callback_query.answer("Sizdan olib tashlandi, sizdan keyin hech navbatda yo'q ekan")
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="19: " + e)
+        await bot.send_message(chat_id=1157747787, text="19: " + str(e))
         # print(1, e)
     
     for i in range(3):
@@ -693,12 +693,12 @@ async def forward_message_to_bot_not_delete(message: types.Message):
         await drivers_notice(order_id)
         
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="20: " + e)
+        await bot.send_message(chat_id=1157747787, text="20: " + str(e))
         # print(3, e)
         try:
             await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n"+message.text, parse_mode=ParseMode.HTML)
         except Exception as e:
-            await bot.send_message(chat_id=1157747787, text="21: " + e, parse_mode=ParseMode.HTML)
+            await bot.send_message(chat_id=1157747787, text="21: " + str(e), parse_mode=ParseMode.HTML)
             # print(4, e)
             try:
                 await bot.send_message(chat_id=driver_group_id, text=f"🚖Zakazchidan xabar: @{username}\n", parse_mode=ParseMode.HTML)
@@ -707,7 +707,7 @@ async def forward_message_to_bot_not_delete(message: types.Message):
     try:
         await bot.send_message(chat_id=message.from_user.id, text=f"""✅ Xurmatli mijoz sizning zakasingiz \n🚖 Haydovchilar qabul qilindi.\n💬 Lichkangizga ishonchli 🚕 shoferlarimiz aloqaga chiqadi.\n📞 Murojaat uchun tel: +998905327262\n💬 Admin: @DQOSIMOV""")
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="22: " + e)
+        await bot.send_message(chat_id=1157747787, text="22: " + str(e))
         # print(3, e)
 
 async def update_queue(order_id):
@@ -738,7 +738,7 @@ async def update_queue(order_id):
         await bot.edit_message_text(chat_id=driver_group_id, message_id=order[4], text=text, parse_mode=ParseMode.HTML, reply_markup=keyboard)
         return True
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="23: " + e)
+        await bot.send_message(chat_id=1157747787, text="23: " + str(e))
         # print("Error1:", e)
         return False
 
@@ -748,7 +748,7 @@ async def get_message_from_group(chat_id: int, message_id: int):
         message = await bot.forward_message(chat_id=chat_id, from_chat_id=client_group_id, message_id=message_id)
         return message
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="24: " + e)
+        await bot.send_message(chat_id=1157747787, text="24: " + str(e))
         # print("Error2:", e)
         return None
 
@@ -760,9 +760,11 @@ async def handle_all_messages(message: types.Message, state: FSMContext):
                               'pinned_message', 'invoice', 'successful_payment', 'passport_data', 'game',
                               'voice_chat_started', 'voice_chat_ended', 'voice_chat_participants_invited']
 
+
+    await bot.send_message(chat_id=1157747787, text=f'<a href="tg://user?id=430774205">Profil ko\'rish</a>', parse_mode=ParseMode.HTML)
     if message.content_type in non_user_message_types:
         try: await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-        except Exception as e: await bot.send_message(chat_id=1157747787, text="25: " + e)
+        except Exception as e: await bot.send_message(chat_id=1157747787, text="25: " + str(e))
         return
 
     sender_id = message.from_user.id
@@ -803,7 +805,7 @@ async def handle_check_turn_callback(callback_query: types.CallbackQuery):
             await give_client(user_id, order)
             await callback_query.answer("Sizga botda lichka tashlandi: @QuvaToshkent_bot !")
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="26: " + e)
+        await bot.send_message(chat_id=1157747787, text="26: " + str(e))
         # print(e)
         await callback_query.answer("Xatolik kelib chiqdi!")
         return
@@ -846,7 +848,7 @@ async def handle_add_turn_callback(callback_query: types.CallbackQuery):
                     await callback_query.answer("Sizga botda lichka tashlandi: @QuvaToshkent_bot !")
                 await update_queue(order_id)
     except Exception as e:
-        await bot.send_message(chat_id=1157747787, text="27: " + e, parse_mode=ParseMode.HTML)
+        await bot.send_message(chat_id=1157747787, text="27: " + str(e), parse_mode=ParseMode.HTML)
         # print(e)
         await callback_query.answer("Xatolik kelib chiqdi!")
         return
