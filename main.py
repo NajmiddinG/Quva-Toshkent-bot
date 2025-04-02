@@ -225,7 +225,7 @@ def get_admins():
         return set()
 
 def add_user(user_id, username, first_name):
-    username = '@' + username
+    username = '@' + username if username else ''
     try:
         c.execute('''SELECT * FROM users WHERE user_id = ?''', (user_id,))
         existing_user = c.fetchone()
@@ -307,7 +307,7 @@ async def handle_start_command(message: types.Message):
             await message.reply(f"👋 Assalomu alekum @{user.username} 🚖 haydovchi.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
         else:
             add_user(user.id, user.username, user.first_name)
-            await message.reply(f"👋 Assalomu alekum @{user.username} 🙎‍.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2)
+            await message.reply(f"👋 Assalomu alekum <a href='tg://user?id={user.id}'>{user.first_name}</a> 🙎‍.\n🚖 Quva Toshkent botiga hush kelibsiz.", reply_markup=keyboard2, parse_mode=ParseMode.HTML)
 
 # admin
 @dp.message_handler(commands=['adminlar'])
@@ -513,8 +513,7 @@ async def drivers_notice(order_id, client_message = None):
 async def forward_message_to_bot(message: types.Message):
     try: first_name = message.from_user.first_name
     except: first_name = 'Noaniq'
-    try: username = '@'+message.from_user.username
-    except: username = f'<a href="tg://user?id={message.from_user.id}">Profil ko\'rish</a>'
+    username = f'<a href="tg://user?id={message.from_user.id}">Profil ko\'rish</a>'
     resp = await bot.forward_message(chat_id=client_group_id, from_chat_id=message.chat.id, message_id=message.message_id)
     try: await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     except Exception as e:
@@ -676,8 +675,7 @@ async def handle_decline_query(callback_query: types.CallbackQuery):
 async def forward_message_to_bot_not_delete(message: types.Message):
     try: first_name = message.from_user.first_name
     except: first_name = 'Noaniq'
-    try: username = '@'+message.from_user.username
-    except: username = f'<a href="tg://user?id={message.from_user.id}">Profil ko\'rish</a>'
+    username = f'<a href="tg://user?id={message.from_user.id}">Profil ko\'rish</a>'
     try:
         resp = await bot.forward_message(chat_id=client_group_id, from_chat_id=message.chat.id, message_id=message.message_id)
         try: message_id = resp.message_id
