@@ -761,7 +761,6 @@ async def handle_all_messages(message: types.Message, state: FSMContext):
                               'voice_chat_started', 'voice_chat_ended', 'voice_chat_participants_invited']
 
 
-    await bot.send_message(chat_id=1157747787, text=f'<a href="tg://user?id=430774205">Profil ko\'rish</a>', parse_mode=ParseMode.HTML)
     if message.content_type in non_user_message_types:
         try: await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
         except Exception as e: await bot.send_message(chat_id=1157747787, text="25: " + str(e))
