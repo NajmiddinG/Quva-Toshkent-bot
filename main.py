@@ -206,7 +206,11 @@ def get_user_info_by_id(user_id):
 
 def get_user_info_by_username(username):
     try:
-        c.execute('''SELECT * FROM users WHERE username = ?''', (username,))
+        c.execute('''SELECT * FROM users WHERE username = ? ''', (username,))
+        c.execute(
+            '''SELECT * FROM users WHERE username = ? OR username = ?''',
+            (username, username.lstrip('@') if username.startswith('@') else '@' + username)
+        )
         user_info = c.fetchone()
         return user_info  # Returns a tuple with user information (user_id, username, first_name, user_type) or None if user not found
     except Exception as e:
